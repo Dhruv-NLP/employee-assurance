@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Employee Assurance
 
 An internal web application for publishing employee assurance notices, assigning them to employees, collecting confirmations, and tracking responses.
@@ -86,5 +86,3 @@ These runtime files and `.env` are excluded by `.gitignore`. Back up the databas
 
 No automated test suite is configured yet. The current `npm test` script exits with a “no test specified” message.
 =======
-hello
->>>>>>> 55fb16563df0405ff3274e35cf9d85c9d7f9eef6
