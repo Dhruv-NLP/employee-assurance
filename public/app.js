@@ -11,6 +11,9 @@ const message = document.querySelector("#message");
 const loginMessage = document.querySelector("#login-message");
 
 const userForm = document.querySelector("#user-form");
+const createdAccount = document.querySelector("#created-account");
+const createdAccountDetails =
+  document.querySelector("#created-account-details");
 const profileForm = document.querySelector("#profile-form");
 const profileUserSelect = document.querySelector("#profile-user-select");
 const usersBody = document.querySelector("#users-body");
@@ -235,18 +238,54 @@ userForm.addEventListener("submit", async event => {
   const form = event.currentTarget;
 
   try {
+    const employee = {
+      username: form.elements.username.value.trim(),
+      employee_id: form.elements.employee_id.value.trim(),
+      employee_name: form.elements.employee_name.value.trim(),
+      station: form.elements.station.value.trim(),
+      line: form.elements.line.value.trim(),
+      posting: form.elements.posting.value.trim(),
+      designation: form.elements.designation.value.trim()
+    };
+
     await api("/api/users", {
       method: "POST",
       body: JSON.stringify({
-        username: form.elements.username.value.trim(),
+        ...employee,
         password: form.elements.password.value
       })
     });
 
-    form.reset();
-    showMessage("Account created. Now complete the employee profile.");
+    createdAccountDetails.replaceChildren();
+    for (const [label, value] of [
+      ["Username", employee.username],
+      ["Employee ID", employee.employee_id],
+      ["Employee name", employee.employee_name],
+      ["Station", employee.station],
+      ["Line", employee.line],
+      ["Posting", employee.posting],
+      ["Designation", employee.designation],
+      ["Account status", "Active"]
+    ]) {
+      const term = document.createElement("dt");
+      term.textContent = label;
+      const description = document.createElement("dd");
+      description.textContent = value;
+      createdAccountDetails.append(term, description);
+    }
+    createdAccount.hidden = false;
+    createdAccount.scrollIntoView({ behavior: "smooth", block: "center" });
 
-    await loadUsers();
+    form.reset();
+    showMessage("Employee account and profile created. Account status: Active.");
+
+    try {
+      await loadUsers();
+    } catch (error) {
+      showMessage(
+        `Employee account created, but the account list could not be refreshed: ${error.message}`
+      );
+    }
   } catch (error) {
     handleError(error);
   }
@@ -340,7 +379,7 @@ profileForm.addEventListener("submit", async event => {
 });
 
 // ---------- Admin: publish an assurance ----------
-function splitTargets(value) {
+function splitEmployeeIds(value) {
   return [...new Set(
     value.split(",").map(item => item.trim()).filter(Boolean)
   )];
@@ -350,17 +389,8 @@ assuranceForm.addEventListener("submit", async event => {
   event.preventDefault();
 
   const form = event.currentTarget;
-  const allEmployees = form.elements.all_employees.checked;
-
-  const stations = splitTargets(form.elements.stations.value);
-  const lines = splitTargets(form.elements.lines.value);
-  const postings = splitTargets(form.elements.postings.value);
-
-  if (!allEmployees && !stations.length && !lines.length && !postings.length) {
-    document.querySelector("#publish-message").textContent =
-      "Select all employees or enter at least one target station, line or posting.";
-    return;
-  }
+  const excludedEmployeeIds =
+    splitEmployeeIds(form.elements.excluded_employee_ids.value);
 
   if (!form.elements.pdf.files.length) {
     document.querySelector("#publish-message").textContent =
@@ -373,10 +403,10 @@ assuranceForm.addEventListener("submit", async event => {
   formData.append("issue_date", form.elements.issue_date.value);
   formData.append("due_date", form.elements.due_date.value);
   formData.append("pdf", form.elements.pdf.files[0]);
-  formData.append("all_employees", String(allEmployees));
-  formData.append("stations", JSON.stringify(stations));
-  formData.append("lines", JSON.stringify(lines));
-  formData.append("postings", JSON.stringify(postings));
+  formData.append(
+    "excluded_employee_ids",
+    JSON.stringify(excludedEmployeeIds)
+  );
 
   const publishMessage = document.querySelector("#publish-message");
   publishMessage.textContent = "Publishing assurance…";

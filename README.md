@@ -5,8 +5,8 @@ An internal web application for publishing employee assurance notices, assigning
 
 ## Features
 
-- **Administrator accounts:** Create employee accounts, maintain employee profiles, and deactivate accounts.
-- **Targeted publication:** Upload a PDF assurance notice and assign it to all active employees or to employees matched by station, line, and/or posting.
+- **Administrator accounts:** Create employee accounts with complete employee profiles, update profile details, and deactivate accounts.
+- **Assurance publication:** Upload a PDF notice and assign it to all active employee accounts by default, with optional exclusions by Employee ID. Existing notices are backfilled to current active employees, and newly created employee accounts are assigned all existing and future notices unless their Employee ID is excluded.
 - **Employee confirmations:** Employees can view notices assigned to them, open the PDF, and confirm they have read and understood it.
 - **Progress tracking:** Administrators can review assignment totals and employee-level confirmation status.
 - **Assurance records:** Administrators can create, update, list, and archive employee assurance records.

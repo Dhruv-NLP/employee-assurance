@@ -114,6 +114,13 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS assurance_exclusions (
+    assurance_id INTEGER NOT NULL
+      REFERENCES assurance_publications(id),
+    employee_id TEXT NOT NULL,
+    PRIMARY KEY (assurance_id, employee_id)
+  );
+
   CREATE TABLE IF NOT EXISTS assurance_assignments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     assurance_id INTEGER NOT NULL
@@ -132,6 +139,35 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_assignments_assurance
     ON assurance_assignments(assurance_id, status);
 `);
+
+ensureColumn(
+  "assurance_publications",
+  "include_future_employees",
+  "INTEGER NOT NULL DEFAULT 0 CHECK (include_future_employees IN (0, 1))"
+);
+
+db.transaction(() => {
+  db.prepare(`
+    UPDATE assurance_publications
+    SET include_future_employees = 1
+  `).run();
+
+  db.prepare(`
+    INSERT OR IGNORE INTO assurance_assignments (assurance_id, user_id)
+    SELECT p.id, u.id
+    FROM assurance_publications p
+    JOIN users u
+      ON u.role = 'user'
+     AND u.active = 1
+    WHERE p.include_future_employees = 1
+      AND NOT EXISTS (
+        SELECT 1
+        FROM assurance_exclusions e
+        WHERE e.assurance_id = p.id
+          AND e.employee_id = u.employee_id
+      )
+  `).run();
+})();
 
 
 app.disable("x-powered-by");// this disables the "X-Powered-By" HTTP header in the Express application, which helps to reduce information disclosure about the underlying technology stack and enhances security by making it less obvious that the application is built with Express.
@@ -382,6 +418,12 @@ app.post("/api/users", requireLogin, requireAdmin, async (req, res, next) => {
     const username = clean(req.body.username, 50);
     const password = typeof req.body.password === "string"
       ? req.body.password : "";
+    const employee_id = clean(req.body.employee_id, 40);
+    const employee_name = clean(req.body.employee_name, 120);
+    const station = clean(req.body.station, 100);
+    const line = clean(req.body.line, 100);
+    const posting = clean(req.body.posting, 100);
+    const designation = clean(req.body.designation, 100);
 
     if (!username || !/^[a-zA-Z0-9._-]+$/.test(username) ||
         password.length < 12 || password.length > 200) {
@@ -390,14 +432,65 @@ app.post("/api/users", requireLogin, requireAdmin, async (req, res, next) => {
       });
     }
 
+    if (
+      !employee_id || !employee_name ||
+      !station || !line || !posting || !designation
+    ) {
+      return res.status(400).json({
+        error: "Complete all employee profile fields."
+      });
+    }
+
     const hash = await bcrypt.hash(password, 12);
 
-    db.prepare(`
-      INSERT INTO users (username, password_hash, role)
-      VALUES (?, ?, 'user')
-    `).run(username, hash);
+    const createEmployee = db.transaction(() => {
+      const result = db.prepare(`
+        INSERT INTO users (
+          username, password_hash, role, employee_id, employee_name,
+          station, line, posting, designation
+        )
+        VALUES (?, ?, 'user', ?, ?, ?, ?, ?, ?)
+      `).run(
+        username, hash, employee_id, employee_name,
+        station, line, posting, designation
+      );
 
-    res.status(201).json({ ok: true });
+      const futureAssurances = db.prepare(`
+        SELECT p.id
+        FROM assurance_publications p
+        WHERE p.include_future_employees = 1
+          AND NOT EXISTS (
+            SELECT 1
+            FROM assurance_exclusions e
+            WHERE e.assurance_id = p.id
+              AND e.employee_id = ?
+          )
+      `).all(employee_id);
+      const assign = db.prepare(`
+        INSERT INTO assurance_assignments (assurance_id, user_id)
+        VALUES (?, ?)
+      `);
+
+      for (const assurance of futureAssurances) {
+        assign.run(assurance.id, result.lastInsertRowid);
+      }
+
+      return result;
+    });
+
+    const result = createEmployee();
+
+    res.status(201).json({
+      id: result.lastInsertRowid,
+      username,
+      employee_id,
+      employee_name,
+      station,
+      line,
+      posting,
+      designation,
+      active: true
+    });
   } catch (err) {
     if (String(err.code).startsWith("SQLITE_CONSTRAINT")) {
       return res.status(409).json({ error: "Username already exists." });
@@ -491,14 +584,14 @@ app.patch("/api/users/:id/deactivate", requireLogin, requireAdmin, (req, res) =>
 
 
 
-function parseTargets(value) {
+function parseExcludedEmployeeIds(value) {
   if (typeof value !== "string") return null;
 
   try {
     const parsed = JSON.parse(value);
     if (!Array.isArray(parsed) || parsed.length > 100) return null;
 
-    const cleaned = parsed.map(v => clean(v, 100));
+    const cleaned = parsed.map(v => clean(v, 40));
     if (cleaned.some(v => !v)) return null;
 
     return [...new Set(cleaned)];
@@ -530,11 +623,8 @@ app.post(
       const title = clean(req.body.title, 150);
       const issueDate = req.body.issue_date;
       const dueDate = req.body.due_date || null;
-      const allEmployees = req.body.all_employees === "true";
-
-      const stations = parseTargets(req.body.stations);
-      const lines = parseTargets(req.body.lines);
-      const postings = parseTargets(req.body.postings);
+      const excludedEmployeeIds =
+        parseExcludedEmployeeIds(req.body.excluded_employee_ids || "[]");
 
       if (
         !title ||
@@ -550,45 +640,37 @@ app.post(
         });
       }
 
-      if (!stations || !lines || !postings) {
+      if (!excludedEmployeeIds) {
         return res.status(400).json({
-          error: "Target selections must be valid arrays."
+          error: "Excluded employee IDs must be a valid list of up to 100 IDs."
         });
       }
 
-      if (!allEmployees &&
-          !stations.length && !lines.length && !postings.length) {
-        return res.status(400).json({
-          error: "Select target groups or explicitly choose all employees."
-        });
-      }
+      if (excludedEmployeeIds.length) {
+        const matchedIds = db.prepare(`
+          SELECT DISTINCT employee_id FROM users
+          WHERE role = 'user'
+            AND employee_id IN (${excludedEmployeeIds.map(() => "?").join(",")})
+        `).all(...excludedEmployeeIds).map(row => row.employee_id);
 
-      const clauses = ["role = 'user'", "active = 1"];
-      const params = [];
-
-      if (!allEmployees) {
-        for (const [column, values] of [
-          ["station", stations],
-          ["line", lines],
-          ["posting", postings]
-        ]) {
-          if (values.length) {
-            clauses.push(
-              `${column} IN (${values.map(() => "?").join(",")})`
-            );
-            params.push(...values);
-          }
+        if (matchedIds.length !== excludedEmployeeIds.length) {
+          return res.status(400).json({
+            error: "One or more excluded employee IDs were not found."
+          });
         }
       }
 
+      const exclusionClause = excludedEmployeeIds.length
+        ? `AND employee_id NOT IN (${excludedEmployeeIds.map(() => "?").join(",")})`
+        : "";
       const recipients = db.prepare(`
         SELECT id FROM users
-        WHERE ${clauses.join(" AND ")}
-      `).all(...params);
+        WHERE role = 'user' AND active = 1 ${exclusionClause}
+      `).all(...excludedEmployeeIds);
 
       if (!recipients.length) {
         return res.status(400).json({
-          error: "No active employee accounts match these targets."
+          error: "No active employee accounts remain after applying exclusions."
         });
       }
 
@@ -599,8 +681,9 @@ app.post(
       const publish = db.transaction(() => {
         const result = db.prepare(`
           INSERT INTO assurance_publications
-            (title, issue_date, due_date, file_key, published_by)
-          VALUES (?, ?, ?, ?, ?)
+            (title, issue_date, due_date, file_key, published_by,
+             include_future_employees)
+          VALUES (?, ?, ?, ?, ?, 1)
         `).run(
           title,
           issueDate,
@@ -608,6 +691,14 @@ app.post(
           fileKey,
           req.session.user.id
         );
+
+        const insertExclusion = db.prepare(`
+          INSERT INTO assurance_exclusions (assurance_id, employee_id)
+          VALUES (?, ?)
+        `);
+        for (const employeeId of excludedEmployeeIds) {
+          insertExclusion.run(result.lastInsertRowid, employeeId);
+        }
 
         const insertAssignment = db.prepare(`
           INSERT INTO assurance_assignments

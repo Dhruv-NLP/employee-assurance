@@ -127,6 +127,30 @@
                        minlength="12" maxlength="200"
                        autocomplete="new-password" required>
               </label>
+
+              <label>Employee ID
+                <input name="employee_id" maxlength="40" required>
+              </label>
+
+              <label>Employee name
+                <input name="employee_name" maxlength="120" required>
+              </label>
+
+              <label>Station
+                <input name="station" maxlength="100" required>
+              </label>
+
+              <label>Line
+                <input name="line" maxlength="100" required>
+              </label>
+
+              <label>Posting
+                <input name="posting" maxlength="100" required>
+              </label>
+
+              <label>Designation
+                <input name="designation" maxlength="100" required>
+              </label>
             </div>
 
             <button type="submit">Create account</button>
@@ -136,6 +160,12 @@
             Give credentials privately. Use a unique password for
             every account.
           </p>
+
+          <section id="created-account" class="panel" hidden
+                   aria-live="polite">
+            <h3>Employee account created</h3>
+            <dl id="created-account-details"></dl>
+          </section>
         </section>
 
         <!-- EMPLOYEE PROFILE MANAGEMENT -->
@@ -232,37 +262,16 @@
             <fieldset>
               <legend>Assign recipients</legend>
 
-              <label>
-                <input type="checkbox" name="all_employees"
-                       id="all-employees" value="true">
-                Assign to all active employee accounts
-              </label>
-
               <p>
-                Otherwise, enter the target values below. Match the
-                employee profile values exactly.
+                This assurance is assigned to all active employee accounts.
+                New employee accounts will also receive it unless excluded
+                by Employee ID.
               </p>
 
-              <label>Stations (comma-separated)
-                <input name="stations" id="target-stations"
-                       placeholder="e.g. Station A, Station B">
+              <label>Exclude employee IDs (comma-separated, optional)
+                <input name="excluded_employee_ids" maxlength="4100"
+                       placeholder="e.g. EMP001, EMP002">
               </label>
-
-              <label>Lines (comma-separated)
-                <input name="lines" id="target-lines"
-                       placeholder="e.g. Red Line, Blue Line">
-              </label>
-
-              <label>Postings (comma-separated)
-                <input name="postings" id="target-postings"
-                       placeholder="e.g. Operations, Maintenance">
-              </label>
-
-              <p>
-                Within a category, recipients match any selected value.
-                If multiple categories are entered, employees must match
-                at least one value in each entered category.
-              </p>
             </fieldset>
 
             <button type="submit">Publish and assign assurance</button>
