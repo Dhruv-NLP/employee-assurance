@@ -82,7 +82,5 @@ These runtime files and `.env` are excluded by `.gitignore`. Back up the databas
 - Employee passwords must be at least 12 characters. Share credentials privately.
 - The current session-cookie configuration is intended for an internal HTTP/LAN deployment. Before exposing the app over the internet, deploy behind HTTPS and configure the session cookie for secure HTTPS use.
 
-## Tests
 
-No automated test suite is configured yet. The current `npm test` script exits with a “no test specified” message.
 =======
