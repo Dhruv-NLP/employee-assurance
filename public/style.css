@@ -1,0 +1,174 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f3f6fa;
+  color: #1d2939;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  background: #173b65;
+  color: white;
+  padding: 22px max(20px, calc((100% - 1200px) / 2));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+header h1 {
+  margin: 0 0 6px;
+  font-size: 25px;
+}
+
+header p {
+  margin: 0;
+  color: #d9e6f5;
+}
+
+main {
+  max-width: 1200px;
+  margin: 24px auto;
+  padding: 0 18px;
+}
+
+.panel {
+  background: white;
+  padding: 22px;
+  margin-bottom: 22px;
+  border: 1px solid #dce3ed;
+  border-radius: 10px;
+  box-shadow: 0 3px 12px #14243a0b;
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 19px;
+}
+
+label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+input, select, textarea {
+  display: block;
+  width: 100%;
+  margin-top: 7px;
+  padding: 11px;
+  border: 1px solid #bdc8d6;
+  border-radius: 6px;
+  font: inherit;
+  background: white;
+  color: #1d2939;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid #5b9ce5;
+  outline-offset: 1px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+}
+
+button {
+  border: 0;
+  border-radius: 6px;
+  padding: 11px 16px;
+  background: #1769aa;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(.92);
+}
+
+button.secondary {
+  background: #64748b;
+}
+
+.actions, .list-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.list-heading {
+  justify-content: space-between;
+}
+
+.list-heading input {
+  max-width: 280px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th, td {
+  text-align: left;
+  padding: 12px 10px;
+  border-bottom: 1px solid #e4e9f0;
+  vertical-align: top;
+}
+
+th {
+  background: #f7f9fc;
+  white-space: nowrap;
+}
+
+td button {
+  margin: 2px;
+  padding: 7px 10px;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 650px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    padding: 15px;
+  }
+
+  .list-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .list-heading input {
+    max-width: none;
+  }
+
+  header h1 {
+    font-size: 21px;
+  }
+}

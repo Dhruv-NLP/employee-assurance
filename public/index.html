@@ -1,0 +1,327 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7fb">
+  <title>Employee Assurance Management</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Employee Assurance</h1>
+      <p>Assurance publication, employee confirmation and tracking</p>
+    </div>
+    <button id="logout" type="button" hidden>Log out</button>
+  </header>
+
+  <main>
+    <!-- LOGIN -->
+    <section id="login-panel" class="panel">
+      <h2>Sign in</h2>
+      <p>Use your assigned employee account.</p>
+
+      <form id="login-form">
+        <label>Username
+          <input name="username" autocomplete="username"
+                 maxlength="50" required>
+        </label>
+
+        <label>Password
+          <input name="password" type="password"
+                 autocomplete="current-password" required>
+        </label>
+
+        <button type="submit">Sign in</button>
+      </form>
+
+      <p id="login-message" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- AUTHENTICATED APPLICATION -->
+    <section id="app-panel" hidden>
+      <div class="panel">
+        <p id="welcome"></p>
+        <p id="message" role="status" aria-live="polite"></p>
+      </div>
+
+      <!-- EMPLOYEE VIEW -->
+      <section id="employee-panel" hidden>
+        <section class="panel">
+          <h2>My assigned assurances</h2>
+          <p>
+            Review each assigned notice and confirm only after
+            reading and understanding its contents.
+          </p>
+
+          <div id="employee-assurances">
+            <p>Your assigned assurances will appear here.</p>
+          </div>
+        </section>
+
+        <section id="pdf-panel" class="panel" hidden>
+          <div class="list-heading">
+            <h2 id="pdf-title">Assurance document</h2>
+            <button id="close-pdf" class="secondary" type="button">
+              Close document
+            </button>
+          </div>
+
+          <p id="pdf-details"></p>
+
+          <iframe
+            id="pdf-viewer"
+            title="Assurance PDF document"
+            width="100%"
+            height="600"
+            style="border: 1px solid #d5dce5; border-radius: 8px;"
+          ></iframe>
+
+          <p>
+            If the PDF does not appear, use the option below to open
+            the document in a separate browser tab.
+          </p>
+
+          <a id="open-pdf" href="#" target="_blank"
+             rel="noopener noreferrer">Open PDF in new tab</a>
+
+          <div class="panel">
+            <h3>Employee confirmation</h3>
+            <p>
+              By confirming, you acknowledge that you have reviewed
+              this assurance notice.
+            </p>
+
+            <label>
+              <input id="confirmation-checkbox" type="checkbox">
+              I have read and understood this assurance.
+            </label>
+
+            <button id="confirm-assurance" type="button" disabled>
+              I Confirm / I Assure
+            </button>
+
+            <p id="confirmation-message"
+               role="status" aria-live="polite"></p>
+          </div>
+        </section>
+      </section>
+
+      <!-- ADMIN VIEW -->
+      <section id="admin-panel" hidden>
+        <section class="panel">
+          <h2>Create employee account</h2>
+
+          <form id="user-form">
+            <div class="form-grid">
+              <label>Username
+                <input name="username" maxlength="50"
+                       autocomplete="off" required>
+              </label>
+
+              <label>Temporary password
+                <input name="password" type="password"
+                       minlength="12" maxlength="200"
+                       autocomplete="new-password" required>
+              </label>
+            </div>
+
+            <button type="submit">Create account</button>
+          </form>
+
+          <p>
+            Give credentials privately. Use a unique password for
+            every account.
+          </p>
+        </section>
+
+        <!-- EMPLOYEE PROFILE MANAGEMENT -->
+        <section class="panel">
+          <h2>Employee profiles</h2>
+          <p>
+            Maintain the employee details used to assign assurance
+            notices.
+          </p>
+
+          <form id="profile-form">
+            <input type="hidden" name="user_id">
+
+            <div class="form-grid">
+              <label>Account
+                <select name="profile_user_id" id="profile-user-select"
+                        required>
+                  <option value="">Select employee account</option>
+                </select>
+              </label>
+
+              <label>Employee ID
+                <input name="employee_id" maxlength="40" required>
+              </label>
+
+              <label>Employee name
+                <input name="employee_name" maxlength="120" required>
+              </label>
+
+              <label>Station
+                <input name="station" maxlength="100" required>
+              </label>
+
+              <label>Line
+                <input name="line" maxlength="100" required>
+              </label>
+
+              <label>Posting
+                <input name="posting" maxlength="100" required>
+              </label>
+
+              <label>Designation
+                <input name="designation" maxlength="100" required>
+              </label>
+            </div>
+
+            <button type="submit">Save employee profile</button>
+          </form>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Employee ID</th>
+                  <th>Name</th>
+                  <th>Station</th>
+                  <th>Line</th>
+                  <th>Posting</th>
+                  <th>Designation</th>
+                  <th>Account status</th>
+                </tr>
+              </thead>
+              <tbody id="users-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- PUBLISH AN ASSURANCE -->
+        <section class="panel">
+          <h2>Publish assurance notice</h2>
+
+          <form id="assurance-form" enctype="multipart/form-data">
+            <div class="form-grid">
+              <label>Assurance title
+                <input name="title" maxlength="200"
+                       placeholder="Enter notice title" required>
+              </label>
+
+              <label>Issue date
+                <input name="issue_date" type="date" required>
+              </label>
+
+              <label>Confirmation deadline (optional)
+                <input name="due_date" type="date">
+              </label>
+
+              <label>Assurance PDF
+                <input name="pdf" type="file"
+                       accept=".pdf,application/pdf" required>
+              </label>
+            </div>
+
+            <fieldset>
+              <legend>Assign recipients</legend>
+
+              <label>
+                <input type="checkbox" name="all_employees"
+                       id="all-employees" value="true">
+                Assign to all active employee accounts
+              </label>
+
+              <p>
+                Otherwise, enter the target values below. Match the
+                employee profile values exactly.
+              </p>
+
+              <label>Stations (comma-separated)
+                <input name="stations" id="target-stations"
+                       placeholder="e.g. Station A, Station B">
+              </label>
+
+              <label>Lines (comma-separated)
+                <input name="lines" id="target-lines"
+                       placeholder="e.g. Red Line, Blue Line">
+              </label>
+
+              <label>Postings (comma-separated)
+                <input name="postings" id="target-postings"
+                       placeholder="e.g. Operations, Maintenance">
+              </label>
+
+              <p>
+                Within a category, recipients match any selected value.
+                If multiple categories are entered, employees must match
+                at least one value in each entered category.
+              </p>
+            </fieldset>
+
+            <button type="submit">Publish and assign assurance</button>
+          </form>
+
+          <p id="publish-message" role="status" aria-live="polite"></p>
+        </section>
+
+        <!-- ASSURANCE TRACKING -->
+        <section class="panel">
+          <h2>Published assurances</h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Issue date</th>
+                  <th>Deadline</th>
+                  <th>Assigned</th>
+                  <th>Confirmed</th>
+                  <th>Pending</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="assurances-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- EMPLOYEE-LEVEL RESPONSES -->
+        <section id="responses-panel" class="panel" hidden>
+          <div class="list-heading">
+            <h2 id="responses-title">Employee responses</h2>
+            <button id="close-responses" class="secondary"
+                    type="button">Close responses</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee ID</th>
+                  <th>Name</th>
+                  <th>Station</th>
+                  <th>Line</th>
+                  <th>Posting</th>
+                  <th>Status</th>
+                  <th>Confirmation time</th>
+                </tr>
+              </thead>
+              <tbody id="responses-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <footer>Internal Employee Assurance Management System</footer>
+</body>
+</html>
